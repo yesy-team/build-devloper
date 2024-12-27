@@ -37,6 +37,9 @@ dependencies {
     // DevTools
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
+    // env
+    implementation ("io.github.cdimascio:dotenv-java:2.3.0")
+
     // Mapper
     implementation ("org.mapstruct:mapstruct:1.5.5.Final")
     annotationProcessor ("org.mapstruct:mapstruct-processor:1.5.5.Final")
@@ -56,6 +59,7 @@ dependencies {
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.session:spring-session-data-redis")
+
     // Jedis
     implementation("redis.clients:jedis:4.4.3")
 
