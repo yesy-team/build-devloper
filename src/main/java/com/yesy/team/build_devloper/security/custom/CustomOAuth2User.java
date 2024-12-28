@@ -78,7 +78,7 @@ public class CustomOAuth2User implements OAuth2User, UserDetails {
         return isNewUser;
     }
 
-    public String getGoogleLoginId() {
-        return member.getGoogleLoginId();
+    public String getLoginId() {
+        return member.getLoginId();
     }
 }

@@ -26,23 +26,45 @@ public class MemberService implements OAuth2UserService<OAuth2UserRequest, OAuth
         DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
         OAuth2User oAuth2User = delegate.loadUser(userRequest);
 
-        String googleId = oAuth2User.getAttribute("sub");
-        String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
+        // OAuth2 제공자 (google, github 등)
+        String provider = userRequest.getClientRegistration().getRegistrationId();
+        String loginId;
+        String email;
+        String name;
 
-        Optional<Member> memberOptional = memberRepository.findByGoogleLoginId(googleId);
+        // Google 또는 GitHub 정보 추출
+        if ("google".equals(provider)) {
+            loginId = oAuth2User.getAttribute("sub"); // Google ID
+            email = oAuth2User.getAttribute("email");
+            name = oAuth2User.getAttribute("name");
+        } else if ("github".equals(provider)) {
+            loginId = oAuth2User.getAttribute("id").toString(); // GitHub ID
+            email = oAuth2User.getAttribute("email");
+            name = oAuth2User.getAttribute("name");
+        } else {
+            throw new OAuth2AuthenticationException("Unsupported provider: " + provider);
+        }
+
+        // DB에서 사용자 검색
+        Optional<Member> memberOptional = memberRepository.findByLoginIdAndProvider(loginId, provider);
 
         Member member;
         if (memberOptional.isPresent()) {
+            // 기존 사용자
             member = memberOptional.get();
         } else {
+            // 새 사용자 등록
             member = new Member();
-            member.setGoogleLoginId(googleId);
+            member.setLoginId(loginId);
+            member.setProvider(provider); // Google 또는 GitHub
         }
+
+        // 사용자 정보 업데이트
         member.setEmail(email);
         member.setUName(name);
         memberRepository.save(member);
 
+        // OAuth2User 반환
         return new DefaultOAuth2User(
                 Collections.singletonList(() -> "ROLE_USER"),
                 oAuth2User.getAttributes(),
@@ -50,7 +72,8 @@ public class MemberService implements OAuth2UserService<OAuth2UserRequest, OAuth
         );
     }
 
-    public Optional<Member> findByEmail(Object sub) {
-        return memberRepository.findByEmail(sub.toString());
+    public Optional<Member> findByEmail(String email) {
+        return memberRepository.findByEmail(email);
     }
 }
+

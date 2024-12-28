@@ -29,8 +29,11 @@ public class Member {
     @Column(name = "email", nullable = false, unique = true, length = 100) // 이메일
     private String email;
 
-    @Column(name = "google_id", nullable = false, unique = true, length = 255) // 구글 소셜 로그인 ID
-    private String googleLoginId;
+    @Column(name = "login_id", nullable = false, unique = true, length = 255) // 구글 소셜 로그인 ID
+    private String loginId;
+
+    @Column(name = "provider", nullable = false, length = 20)
+    private String provider; // "google" 또는 "github"
 
     @Column(name = "alert_enabled", nullable = false) // 이메일 알림 활성화 여부
     private Boolean alertEnabled = true;

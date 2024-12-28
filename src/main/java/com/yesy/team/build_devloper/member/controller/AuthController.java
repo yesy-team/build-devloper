@@ -171,7 +171,7 @@ public class AuthController {
 
             CustomOAuth2User user = (CustomOAuth2User) authentication.getPrincipal();
             String accessToken = jwtUtil.generateToken(
-                    user.getGoogleLoginId(),
+                    user.getLoginId(),
                     user.getEmail(),
                     user.getUserId(),
                     false

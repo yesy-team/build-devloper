@@ -15,5 +15,5 @@ public class MemberDto {
     private String email;
     private boolean alertEnabled;
     private LocalDateTime updateDate;
-    private String googleLoginId;
+    private String loginId;
 }

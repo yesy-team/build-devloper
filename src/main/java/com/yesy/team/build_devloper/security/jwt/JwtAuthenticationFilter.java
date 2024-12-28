@@ -82,14 +82,14 @@ public class JwtAuthenticationFilter extends BasicAuthenticationFilter {
 
     private void authenticateUser(HttpServletRequest request, Claims claims) {
         String email = claims.getSubject();
-        String googleLoginId = claims.get("googleLoginId", String.class);
+        String loginId = claims.get("loginId", String.class);
         Long userId = claims.get("userId", Long.class); // JWT에서 userId 추출
 
-        if (email != null && googleLoginId != null && userId != null) {
+        if (email != null && loginId != null && userId != null) {
             Member user = new Member(); // DB 조회 없이 Member 객체 생성
             user.setId(userId); // JWT에서 추출한 userId 설정
             user.setEmail(email);
-            user.setGoogleLoginId(googleLoginId);
+            user.setLoginId(loginId);
 
             CustomOAuth2User customOAuth2User = new CustomOAuth2User(user, null, null, null, false);
 
@@ -100,7 +100,7 @@ public class JwtAuthenticationFilter extends BasicAuthenticationFilter {
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
             log.info("JWT 인증 성공: {} (GoogleLoginId: {}, UserId: {}, URL: {})",
-                    email, googleLoginId, userId, request.getRequestURI());
+                    email, loginId, userId, request.getRequestURI());
         } else {
             throw new JwtException("Invalid JWT payload");
         }
@@ -110,18 +110,18 @@ public class JwtAuthenticationFilter extends BasicAuthenticationFilter {
         try {
             Claims refreshClaims = jwtUtil.validateToken(refreshToken);
             String email = refreshClaims.getSubject();
-            String googleLoginId = refreshClaims.get("googleLoginId", String.class);
+            String loginId = refreshClaims.get("loginId", String.class);
             Long userId = refreshClaims.get("userId", Long.class);
             boolean isNewUser = refreshClaims.get("isNewUser", Boolean.class);
 
-            if (email == null || googleLoginId == null || userId == null) {
+            if (email == null || loginId == null || userId == null) {
                 log.warn("리프레시 토큰 검증 실패: 잘못된 토큰 데이터");
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid Refresh Token");
                 return;
             }
 
             // 새로운 Access Token 생성
-            String newAccessToken = jwtUtil.generateToken(googleLoginId, email, userId, isNewUser);
+            String newAccessToken = jwtUtil.generateToken(loginId, email, userId, isNewUser);
 
             // Access Token 쿠키에 저장
             Cookie accessTokenCookie = new Cookie("accessToken", newAccessToken);

@@ -34,29 +34,33 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         System.err.println("================================로그인 DB 접근로직 시작.=================================");
-        // 기본적으로 OAuth2User 정보를 가져옴
         OAuth2User oAuth2User = super.loadUser(userRequest);
 
-        // OAuth 제공자가 Google인지 확인
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         String email;
-        String googleLoginId;
+        String loginId;
         String profileImageUrl;
 
         if ("google".equals(registrationId)) {
             email = oAuth2User.getAttribute("email");
-            googleLoginId = oAuth2User.getAttribute("sub"); // Google ID
-            profileImageUrl = oAuth2User.getAttribute("picture"); // Google 프로필 이미지 URL
+            loginId = oAuth2User.getAttribute("sub"); // Google의 고유 ID
+            profileImageUrl = oAuth2User.getAttribute("picture");
+
             System.out.println("Google OAuth2로 가져온 사용자 이메일: " + email);
-            System.out.println("Google OAuth2로 가져온 사용자 ID: " + googleLoginId);
+            System.out.println("Google OAuth2로 가져온 사용자 ID: " + loginId);
+        } else if ("github".equals(registrationId)) {
+            email = oAuth2User.getAttribute("email");
+            loginId = oAuth2User.getAttribute("id").toString(); // GitHub의 고유 ID
+            profileImageUrl = oAuth2User.getAttribute("avatar_url");
 
-            // 세션에 프로필 이미지 URL 저장
-            storeProfileImageInSession(profileImageUrl);
-
-            return processGoogleUser(oAuth2User, email, googleLoginId);
+            System.out.println("GitHub OAuth2로 가져온 사용자 이메일: " + email);
+            System.out.println("GitHub OAuth2로 가져온 사용자 ID: " + loginId);
         } else {
             throw new OAuth2AuthenticationException("Unknown registrationId: " + registrationId);
         }
+
+        storeProfileImageInSession(profileImageUrl);
+        return processOAuth2User(oAuth2User, email, loginId, registrationId);
     }
 
     // 세션에 프로필 이미지 URL 저장하는 메서드
@@ -69,18 +73,22 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         session.setAttribute("profileImageUrl", profileImageUrl);
     }
 
-    // Google 사용자 처리
-    public CustomOAuth2User processGoogleUser(OAuth2User oAuth2User, String email, String googleLoginId) {
-        // Google ID로 기존 사용자 확인
-        Optional<Member> localUser = memberRepository.findByGoogleLoginId(googleLoginId);
+    public CustomOAuth2User processOAuth2User(
+            OAuth2User oAuth2User,
+            String email,
+            String loginId,
+            String provider) {
+
+        // DB에서 사용자 검색
+        Optional<Member> localUser = memberRepository.findByEmail(email); // loginId는 Google과 GitHub 공통 ID
         boolean isNewUser;
 
         Member user;
         if (localUser.isPresent()) {
             // 기존 사용자
             user = localUser.get();
-            isNewUser = false; // 기존 사용자이므로 false
-            log.info("기존 사용자 확인됨: {}, isNewUser: {}", email, isNewUser);
+            isNewUser = false;
+            log.info("기존 {} 사용자 확인됨: {}, isNewUser: {}", provider, email, isNewUser);
         } else {
             // 새 사용자 등록
             isNewUser = true;
@@ -91,42 +99,38 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             user.setEmail(email);
             user.setUName(displayName);
             user.setNickname(nickname);
-            user.setGoogleLoginId(googleLoginId);
+            user.setLoginId(loginId); // Google, GitHub 모두 loginId로 저장
 
             memberRepository.save(user);
-            log.info("로컬 DB에 새 Google 사용자 저장 완료: {}, isNewUser: {}", email, isNewUser);
+            log.info("로컬 DB에 새 {} 사용자 저장 완료: {}, isNewUser: {}", provider, email, isNewUser);
         }
 
         // JWT 발급
-        String accessToken = jwtUtil.generateToken(user.getGoogleLoginId(), user.getEmail(), user.getId(), isNewUser);
-        String refreshToken = jwtUtil.generateRefreshToken(user.getGoogleLoginId(), user.getEmail(), user.getId());
+        String accessToken = jwtUtil.generateToken(user.getLoginId(), user.getEmail(), user.getId(), isNewUser);
+        String refreshToken = jwtUtil.generateRefreshToken(user.getLoginId(), user.getEmail(), user.getId());
 
         // Refresh Token Redis에 저장
         redisRefreshTokenService.saveRefreshToken(user.getEmail(), refreshToken);
-        log.info("Successfully Redis Save Token: {}", refreshToken);
+        log.info("Successfully Redis Save Token for {}: {}", provider, refreshToken);
 
-        // 최종 isNewUser 값 확인
-        log.info("processGoogleUser 완료. email: {}, googleLoginId: {}, isNewUser: {}", email, googleLoginId, isNewUser);
-
-        // CustomOAuth2User 반환
         return new CustomOAuth2User(user, oAuth2User.getAttributes(), accessToken, refreshToken, isNewUser);
     }
 
 
     // 로컬 DB에 Google 사용자 생성
-    private void createGoogleUserInLocalDB(String email, String uName, String nickname, String googleLoginId) {
-        if (memberRepository.findByGoogleLoginId(googleLoginId).isPresent()) {
-            System.out.println("이미 존재하는 Google 사용자: " + googleLoginId);
-            return;
-        }
-
-        Member newUser = new Member();
-        newUser.setEmail(email);
-        newUser.setUName(uName != null ? uName : "사용자");
-        newUser.setNickname(nickname);
-        newUser.setGoogleLoginId(googleLoginId);
-
-        memberRepository.save(newUser);
-        System.out.println("로컬 DB에 Google 사용자 저장 완료: " + email);
-    }
+//    private void createGoogleUserInLocalDB(String email, String uName, String nickname, String loginId) {
+//        if (memberRepository.findByGoogleLoginId(loginId).isPresent()) {
+//            System.out.println("이미 존재하는 Google 사용자: " + loginId);
+//            return;
+//        }
+//
+//        Member newUser = new Member();
+//        newUser.setEmail(email);
+//        newUser.setUName(uName != null ? uName : "사용자");
+//        newUser.setNickname(nickname);
+//        newUser.setLoginId(loginId);
+//
+//        memberRepository.save(newUser);
+//        System.out.println("로컬 DB에 Google 사용자 저장 완료: " + email);
+//    }
 }

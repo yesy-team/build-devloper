@@ -1,6 +1,5 @@
 package com.yesy.team.build_devloper.security.jwt;
 
-import com.yesy.team.build_devloper.util.EnvUtil;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -33,7 +32,7 @@ public class JwtUtil {
     public String generateToken(String sub, String email, Long userId, boolean isNewUser) {
         return Jwts.builder()
                 .setSubject(email) // 이메일을 Subject로 설정
-                .claim("googleLoginId", sub) // Google sub를 id처럼 사용
+                .claim("loginId", sub) // Google sub를 id처럼 사용
                 .claim("userId", userId) // userId 추가
                 .claim("isNewUser", isNewUser)
                 .setIssuedAt(new Date())
@@ -45,7 +44,7 @@ public class JwtUtil {
     public String generateRefreshToken(String sub, String email, Long userId) {
         return Jwts.builder()
                 .setSubject(email)
-                .claim("googleLoginId", sub)
+                .claim("loginId", sub)
                 .claim("userId", userId) // userId 추가
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + refreshExpirationTime))
