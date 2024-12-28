@@ -100,6 +100,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             user.setUName(displayName);
             user.setNickname(nickname);
             user.setLoginId(loginId); // Google, GitHub 모두 loginId로 저장
+            user.setProvider(provider);
 
             memberRepository.save(user);
             log.info("로컬 DB에 새 {} 사용자 저장 완료: {}, isNewUser: {}", provider, email, isNewUser);
