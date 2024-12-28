@@ -44,7 +44,7 @@ public class Member {
     @Column(name = "update_date", nullable = false) // 업데이트 시각
     private LocalDateTime updateDate = LocalDateTime.now();
 
-    @Column(name = "auth_level", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1") // 권한 레벨
+    @Column(name = "auth_level", nullable = false, columnDefinition = "SMALLINT DEFAULT 1") // 권한 레벨 수정
     private int authLevel;
 
     @Column(name = "del_status", nullable = false) // 탈퇴 여부
