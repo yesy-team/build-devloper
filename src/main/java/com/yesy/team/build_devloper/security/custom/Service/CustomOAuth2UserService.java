@@ -1,8 +1,9 @@
-package com.yesy.team.build_devloper.security.custom;
+package com.yesy.team.build_devloper.security.custom.Service;
 
 import com.yesy.team.build_devloper.member.entity.Member;
 import com.yesy.team.build_devloper.member.repository.MemberRepository;
 import com.yesy.team.build_devloper.redis.service.RedisRefreshTokenService;
+import com.yesy.team.build_devloper.security.custom.CustomOAuth2User;
 import com.yesy.team.build_devloper.security.jwt.JwtUtil;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
@@ -116,8 +117,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         return new CustomOAuth2User(user, oAuth2User.getAttributes(), accessToken, refreshToken, isNewUser);
     }
-
-
     // 로컬 DB에 Google 사용자 생성
 //    private void createGoogleUserInLocalDB(String email, String uName, String nickname, String loginId) {
 //        if (memberRepository.findByGoogleLoginId(loginId).isPresent()) {

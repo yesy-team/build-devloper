@@ -4,12 +4,14 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
 
+@Slf4j
 @Component
 public class JwtUtil {
 
@@ -60,9 +62,11 @@ public class JwtUtil {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException e) {
-            throw new ExpiredJwtException(null, null, "JWT expired");
+            log.warn("Expired JWT token: {}", e.getMessage());
+            return null; // 유효하지 않은 경우 null 반환
         } catch (JwtException e) {
-            throw new JwtException("Invalid JWT");
+            log.warn("Invalid JWT token: {}", e.getMessage());
+            return null; // 유효하지 않은 경우 null 반환
         }
     }
 }

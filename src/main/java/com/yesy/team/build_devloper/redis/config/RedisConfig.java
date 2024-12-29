@@ -16,7 +16,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig implements SmartLifecycle {
 
     private boolean isRunning = false;
-
     private JedisConnectionFactory jedisConnectionFactory;
 
     @Value("${spring.data.redis.host}")
@@ -25,7 +24,7 @@ public class RedisConfig implements SmartLifecycle {
     @Value("${spring.data.redis.port}")
     private int redisPort;
 
-    @Value("${spring.data.redis.password}")
+    @Value("${spring.data.redis.password:}")
     private String redisPassword;
 
     @Bean
@@ -35,10 +34,27 @@ public class RedisConfig implements SmartLifecycle {
         RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration();
         redisConfig.setHostName(redisHost);
         redisConfig.setPort(redisPort);
-        redisConfig.setPassword(redisPassword);
 
-        jedisConnectionFactory = new JedisConnectionFactory(redisConfig);
-        jedisConnectionFactory.afterPropertiesSet(); // 초기화 확인
+        if (redisPassword != null && !redisPassword.isEmpty()) {
+            System.out.println("Redis Password detected. Configuring...");
+            redisConfig.setPassword(redisPassword);
+        } else {
+            System.out.println("Redis Password is empty or not set. Skipping password configuration.");
+        }
+
+        System.out.println("Redis Host: " + redisHost);
+        System.out.println("Redis Port: " + redisPort);
+        System.out.println("Redis Password: " + redisPassword);
+
+        try {
+            jedisConnectionFactory = new JedisConnectionFactory(redisConfig);
+            jedisConnectionFactory.afterPropertiesSet(); // 초기화 확인
+            System.out.println("JedisConnectionFactory 초기화 완료");
+        } catch (Exception e) {
+            System.err.println("JedisConnectionFactory 초기화 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+        }
+
         return jedisConnectionFactory;
     }
 

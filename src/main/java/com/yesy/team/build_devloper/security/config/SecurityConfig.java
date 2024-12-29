@@ -3,6 +3,10 @@ package com.yesy.team.build_devloper.security.config;
 import com.yesy.team.build_devloper.member.repository.MemberRepository;
 import com.yesy.team.build_devloper.redis.service.RedisRefreshTokenService;
 import com.yesy.team.build_devloper.security.custom.*;
+import com.yesy.team.build_devloper.security.custom.Service.CustomOAuth2UserService;
+import com.yesy.team.build_devloper.security.custom.handler.CustomLogoutHandler;
+import com.yesy.team.build_devloper.security.custom.handler.CustomOAuth2FailureHandler;
+import com.yesy.team.build_devloper.security.custom.handler.CustomOAuth2SuccessHandler;
 import com.yesy.team.build_devloper.security.jwt.JwtAuthenticationFilter;
 import com.yesy.team.build_devloper.security.jwt.JwtUtil;
 import jakarta.servlet.DispatcherType;
@@ -24,7 +28,6 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.web.SecurityFilterChain;
@@ -37,9 +40,7 @@ public class SecurityConfig {
     @Value("${spring.application.base-url}")
     private String baseUrl;
 
-    private final ClientRegistrationRepository clientRegistrationRepository;
-
-    private final CustomOAuth2SuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtUtil jwtUtil;
@@ -49,14 +50,12 @@ public class SecurityConfig {
 
     // 생성자 주입을 통한 의존성 주입
     @Autowired
-    public SecurityConfig(ClientRegistrationRepository clientRegistrationRepository, CustomOAuth2SuccessHandler oAuth2AuthenticationSuccessHandler,
-                          CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+    public SecurityConfig(CustomOAuth2SuccessHandler customOAuth2SuccessHandler, CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
                           @Lazy CustomOAuth2UserService customOAuth2UserService,
                           JwtUtil jwtUtil,
                           @Lazy RedisRefreshTokenService redisRefreshTokenService,
                           @Lazy OAuth2AuthorizedClientRepository authorizedClientRepository, MemberRepository memberRepository) {
-        this.clientRegistrationRepository = clientRegistrationRepository;
-        this.oAuth2AuthenticationSuccessHandler = oAuth2AuthenticationSuccessHandler;
+        this.customOAuth2SuccessHandler = customOAuth2SuccessHandler;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
         this.customOAuth2UserService = customOAuth2UserService;
         this.jwtUtil = jwtUtil;
@@ -79,11 +78,12 @@ public class SecurityConfig {
                         authorizeRequests
                                 .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()  // FORWARD 요청은 인증 없이 허용
                                 .requestMatchers("/actuator/health").permitAll() // 서버 검증 확인.
-                                .requestMatchers("/", "/react/**", "/static/**", "/react/login", "/react/main").permitAll()  // React 경로 추가
+                                .requestMatchers("/", "/**", "/static/**", "/favicon.ico", "/oauth2/**","/login/oauth2/**",
+                                        "\"/api/oauth2/callback\"").permitAll()  // React 경로 추가
                                 .requestMatchers("/login").anonymous() // 로그인되지 않은 사용자만 접근 가능
-                                .requestMatchers("/api/auth/refresh").permitAll()
+                                .requestMatchers("/api/auth/refresh", "/oauth2/**", "/oauth2/authorization/**").permitAll()
                                 .requestMatchers("/static/**", "/media/**", "/js/**", "/css/**", "/img/**", "/fontawesome-free-6.5.1-web/**", "/particle.png").permitAll()
-                                .requestMatchers("/api/**", "/auth/**", "/oauth2/**").authenticated() // API 경로는 명확히 구분
+                                .requestMatchers("/api/**", "/auth/**").authenticated() // API 경로는 명확히 구분
                                 .requestMatchers("/api/location/save").authenticated()
                                 .anyRequest().authenticated()
                 )
@@ -91,17 +91,10 @@ public class SecurityConfig {
                         exceptionHandling.authenticationEntryPoint(customAuthenticationEntryPoint)
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage(baseUrl + "/react/login") // 로그인 페이지 설정
-                        .successHandler(oAuth2AuthenticationSuccessHandler)
-                        .failureHandler(customOAuth2FailureHandler)
-                        .authorizationEndpoint(authorizationEndpoint ->
-                                authorizationEndpoint.authorizationRequestResolver(
-                                        new CustomAuthorizationRequestResolver(clientRegistrationRepository, baseUrl)
-                                )
-                        )
                         .userInfoEndpoint(userInfoEndpoint ->
                                 userInfoEndpoint.userService(customOAuth2UserService)
                         )
+                        .successHandler(customOAuth2SuccessHandler)
                 )
                 // 특정 경로에만 JwtAuthenticationFilter 추가
                 .addFilterBefore(
@@ -110,11 +103,7 @@ public class SecurityConfig {
                             protected boolean shouldNotFilter(@NotNull HttpServletRequest request) {
                                 // 필터링을 제외할 경로 정의
                                 String path = request.getRequestURI();
-                                return path.startsWith("/react/")
-                                        || path.startsWith("/constellations/")
-                                        || path.startsWith("/planet/")
-                                        || path.startsWith("/meteorShower/")
-                                        || path.startsWith("/public/calendar/");
+                                return path.startsWith("/oauth2/**");
                             }
                         },
                         LogoutFilter.class

@@ -1,5 +1,6 @@
-package com.yesy.team.build_devloper.security.custom;
+package com.yesy.team.build_devloper.security.custom.handler;
 
+import com.yesy.team.build_devloper.security.custom.CustomOAuth2User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

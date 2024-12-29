@@ -14,13 +14,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -161,7 +162,7 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/auth/access-token")
+    @GetMapping("/access-token")
     public ResponseEntity<?> getAccessToken(HttpServletRequest request) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

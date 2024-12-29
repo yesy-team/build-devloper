@@ -1,5 +1,6 @@
-package com.yesy.team.build_devloper.security.custom;
+package com.yesy.team.build_devloper.security.custom.handler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yesy.team.build_devloper.security.exception.EmailAlreadyExistsException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,7 +10,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.URLEncoder;
+import java.util.Map;
 
 @Component
 public class CustomOAuth2FailureHandler implements AuthenticationFailureHandler {
@@ -25,7 +26,12 @@ public class CustomOAuth2FailureHandler implements AuthenticationFailureHandler 
             errorMessage = "알 수 없는 이유로 로그인에 실패했습니다.";
         }
 
-        // 오류 페이지로 리다이렉트 또는 알림
-        response.sendRedirect("/api/member/login?error=true&message=" + URLEncoder.encode(errorMessage, "UTF-8"));
+        // JSON 형식으로 응답
+        response.setContentType("application/json");
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401 상태 코드
+        response.getWriter().write(new ObjectMapper().writeValueAsString(Map.of(
+                "status", "failure",
+                "message", errorMessage
+        )));
     }
 }

@@ -2,10 +2,12 @@ spring:
   forward-headers-strategy: native
   profiles:
     active: dev
-    include: secret, DB
+    include: secret, db
   application:
     name: build_develop
     base-url: "http://localhost:8030"
+    frontend:
+      url: ${FRONTEND_URL}
 #    base-url: "https://www."
   jpa:
     hibernate:
@@ -17,10 +19,6 @@ spring:
   web:
     resources:
       static-locations: classpath:/static/
-  mvc:
-    static-path-pattern: "/**"
-    pathmatch:
-      matching-strategy: ant_path_matcher
 server:
   port: 8030
   error:

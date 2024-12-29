@@ -1,4 +1,4 @@
-package com.yesy.team.build_devloper.security.custom;
+package com.yesy.team.build_devloper.security.custom.Service;
 
 
 import com.yesy.team.build_devloper.member.entity.Member;

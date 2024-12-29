@@ -13,10 +13,12 @@ public class BuildDevloperApplication {
                 .directory(System.getProperty("user.dir")) // 프로젝트 루트 디렉토리 기준
                 .load();
 
-        // 시스템 프로퍼티에 등록
-        System.setProperty("spring.jwt.secret", dotenv.get("JWT_SECRET", "default_secret"));
-        System.setProperty("spring.jwt.expiration", dotenv.get("JWT_EXPIRATION", "3600000"));
-        System.setProperty("spring.jwt.refresh-expiration", dotenv.get("JWT_REFRESH_EXPIRATION", "604800000"));
+        // .env 값을 강제로 Spring Environment에 추가 (이미 존재하는 값은 덮어쓰지 않음)
+        dotenv.entries().forEach(entry -> {
+            if (System.getProperty(entry.getKey()) == null) {
+                System.setProperty(entry.getKey(), entry.getValue());
+            }
+        });
 
         SpringApplication.run(BuildDevloperApplication.class, args);
     }

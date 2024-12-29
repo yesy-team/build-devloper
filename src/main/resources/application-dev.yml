@@ -1,8 +1,9 @@
 spring:
  data:
   redis:
-    host: localhost
+    host: ${REDIS_HOST}
     port: 6379
+    password: ${REDIS_PASSWORD}
     timeout: 6000
     lettuce:
       pool:
