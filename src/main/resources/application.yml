@@ -1,0 +1,41 @@
+spring:
+  forward-headers-strategy: native
+  profiles:
+    active: dev
+    include: secret, db
+  application:
+    name: build_develop
+    base-url: "http://localhost:8030"
+    frontend:
+      url: ${FRONTEND_URL}
+#    base-url: "https://www."
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  web:
+    resources:
+      static-locations: classpath:/static/
+server:
+  port: 8030
+  error:
+    whitelabel:
+      enabled: false
+logging:
+  level:
+    root: INFO
+    com.yesy.team.build_devloper: DEBUG  # ??? ?? ???? DEBUG? ??
+    org:
+      springframework:
+        web: INFO
+      hibernate:
+        SQL: OFF  # ??? ?? DEBUG? ?? ?? ??
+custom:
+  dev:
+    cookieDomain: localhost
+#  prod:
+#    cookieDomain:
+#    url: "https://${custom.prod.cookieDomain}"
